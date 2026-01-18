@@ -1,211 +1,379 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Radar B3 - InvestApp</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <style>
-    @keyframes ticker {
-      0% {
-        transform: translateX(0);
-      }
+  <title>Finance App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-      100% {
-        transform: translateX(-50%);
-      }
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #020617;
+      --border: #1e293b;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --primary: #38bdf8;
+      --danger: #ef4444;
+      --success: #22c55e;
     }
 
-    .ticker-content {
-      display: flex;
-      animation: ticker 40s linear infinite;
+    * {
+      box-sizing: border-box;
+      font-family: Segoe UI, Roboto, Arial
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      padding-bottom: 70px
+    }
+
+    header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 20px
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      padding: 20px
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px
+    }
+
+    .grid-4 {
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr))
     }
 
     .card {
-      background: #1e293b;
+      background: var(--card);
+      border: 1px solid var(--border);
       border-radius: 12px;
-      border: 1px solid #334155;
+      padding: 18px
     }
 
-    /* Ajuste para o Footer */
-    body {
-      padding-bottom: 90px;
+    .card small {
+      color: var(--muted)
     }
 
-    .nav-bar {
-      background: rgba(15, 23, 42, 0.95);
-      backdrop-filter: blur(10px);
-      border-top: 1px solid #334155;
+    .card strong {
+      display: block;
+      font-size: 20px;
+      margin-top: 6px
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #020617;
+      color: var(--text);
+      margin-bottom: 10px
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px
+    }
+
+    th,
+    td {
+      padding: 10px;
+      border-bottom: 1px solid var(--border)
+    }
+
+    .pagination {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 10px
+    }
+
+    .nav-bottom {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 0
     }
 
     .nav-item {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      color: #94a3b8;
-      font-size: 10px;
-      font-weight: 600;
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+      cursor: pointer
     }
 
     .nav-item.active {
-      color: #3b82f6;
+      color: var(--primary);
+      font-weight: 600
+    }
+
+    .nav-item span {
+      display: block;
+      font-size: 18px
+    }
+
+    .page {
+      display: none
+    }
+
+    .page.active {
+      display: block
+    }
+
+    .positivo {
+      color: var(--success)
+    }
+
+    .negativo {
+      color: var(--danger)
     }
   </style>
 </head>
 
-<body class="bg-slate-950 text-white font-sans min-h-screen">
+<body>
 
-  <div class="bg-black border-b border-slate-800 py-3 sticky top-0 z-40">
-    <div class="overflow-hidden whitespace-nowrap flex">
-      <div class="ticker-content" id="ticker-data">
-        <span class="px-10 text-slate-500 font-bold uppercase text-xs">Carregando dados da bolsa...</span>
+  <header><strong>📊 Finance App</strong></header>
+
+  <div class="container">
+
+    <section id="radar" class="page active">
+      <h2>Radar</h2>
+
+      <div class="grid grid-4">
+        <div class="card"><small>Dólar</small><strong id="dolar">--</strong></div>
+        <div class="card"><small>SELIC</small><strong id="selic">--</strong></div>
+        <div class="card"><small>IPCA</small><strong id="ipca">--</strong></div>
+        <div class="card"><small>CDI</small><strong id="cdi">--</strong></div>
       </div>
-    </div>
+
+      <h3 style="margin-top:24px">Ações da B3</h3>
+      <input id="busca" placeholder="Buscar por ticker ou empresa...">
+
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Ticker</th>
+              <th>Empresa</th>
+              <th>Preço</th>
+            </tr>
+          </thead>
+          <tbody id="acoes"></tbody>
+        </table>
+
+        <div class="pagination">
+          <button onclick="prevPage()">Anterior</button>
+          <button onclick="nextPage()">Próxima</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="carteira" class="page">
+      <h2>Carteira</h2>
+
+      <div class="card">
+        <input id="cticker" placeholder="Ticker">
+        <input id="cqt" type="number" placeholder="Quantidade">
+        <input id="cpreco" type="number" placeholder="Preço médio">
+        <button onclick="addAtivo()">Adicionar</button>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <table>
+          <thead>
+            <tr>
+              <th>Ticker</th>
+              <th>Qtd</th>
+              <th>Preço</th>
+              <th>Valor Atual</th>
+              <th>Resultado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="listaCarteira"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="gastos" class="page">
+      <h2>Ganhos & Gastos</h2>
+
+      <div class="card">
+        <input id="desc" placeholder="Descrição">
+        <input id="valor" type="number" placeholder="Valor">
+        <select id="tipo">
+          <option value="ganho">Ganho</option>
+          <option value="gasto">Gasto</option>
+        </select>
+        <button onclick="addMov()">Adicionar</button>
+      </div>
+
+      <div class="grid grid-4" style="margin-top:16px">
+        <div class="card"><small>Ganhos</small><strong id="totalGanhos">R$ 0</strong></div>
+        <div class="card"><small>Gastos</small><strong id="totalGastos">R$ 0</strong></div>
+        <div class="card"><small>Saldo</small><strong id="saldo">R$ 0</strong></div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <table>
+          <thead>
+            <tr>
+              <th>Descrição</th>
+              <th>Tipo</th>
+              <th>Valor</th>
+            </tr>
+          </thead>
+          <tbody id="lista"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="resumo" class="page">
+      <h2>Resumo</h2>
+      <div class="grid grid-4">
+        <div class="card"><small>Ganhos</small><strong id="rGanhos">R$ 0</strong></div>
+        <div class="card"><small>Gastos</small><strong id="rGastos">R$ 0</strong></div>
+        <div class="card"><small>Saldo</small><strong id="rSaldo">R$ 0</strong></div>
+        <div class="card"><small>Investido</small><strong id="rInvestido">R$ 0</strong></div>
+        <div class="card"><small>Resultado Carteira</small><strong id="rResultado">R$ 0</strong></div>
+      </div>
+    </section>
+
   </div>
 
-  <section class="bg-slate-900/50 p-6 border-b border-slate-800">
-    <div class="container mx-auto max-w-2xl">
-      <div class="flex gap-2">
-        <input type="text" id="search-ticker" placeholder="BUSCAR ATIVO..."
-          class="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-blue-400 font-black uppercase outline-none focus:ring-2 focus:ring-blue-500">
-        <button onclick="searchStock()" class="bg-blue-600 px-6 rounded-xl font-black">OK</button>
-      </div>
-      <div id="search-result" class="mt-4"></div>
-    </div>
-  </section>
-
-  <main class="container mx-auto p-4 md:p-8">
-    <div class="grid lg:grid-cols-2 gap-8">
-      <section>
-        <h3 class="text-green-500 font-black mb-4 flex items-center gap-2 uppercase text-xs italic">▲ 10 Maiores Altas
-        </h3>
-        <div id="highs-list" class="space-y-3"></div>
-      </section>
-      <section>
-        <h3 class="text-red-500 font-black mb-4 flex items-center gap-2 uppercase text-xs italic">▼ 10 Maiores Baixas
-        </h3>
-        <div id="lows-list" class="space-y-3"></div>
-      </section>
-    </div>
-  </main>
-
-  <nav class="nav-bar fixed bottom-0 left-0 right-0 h-20 flex z-50 px-2">
-    <a href="#" class="nav-item active">
-      <i data-lucide="layout-dashboard"></i>
-      <span>Radar</span>
-    </a>
-    <a href="#" class="nav-item">
-      <i data-lucide="wallet"></i>
-      <span>Carteira</span>
-    </a>
-    <a href="#" class="nav-item">
-      <i data-lucide="bar-chart-3"></i>
-      <span>Ativos</span>
-    </a>
-    <a href="#" class="nav-item">
-      <i data-lucide="trending-down"></i>
-      <span>Gastos</span>
-    </a>
-    <a href="#" class="nav-item">
-      <i data-lucide="pie-chart"></i>
-      <span>Resumo</span>
-    </a>
+  <nav class="nav-bottom">
+    <div class="nav-item active" onclick="show('radar',this)"><span>📡</span>Radar</div>
+    <div class="nav-item" onclick="show('carteira',this)"><span>💼</span>Carteira</div>
+    <div class="nav-item" onclick="show('gastos',this)"><span>💸</span>Gastos</div>
+    <div class="nav-item" onclick="show('resumo',this)"><span>📊</span>Resumo</div>
   </nav>
 
   <script>
-    const API_TOKEN = 'SUA_CHAVE_AQUI';
-
-    // Inicializa os ícones Lucide
-    lucide.createIcons();
-
-    async function updateTicker() {
-      try {
-        const res = await fetch(`https://brapi.dev/api/quote/%5EBVSP%2CUSDBRL%2CEURBRL%2CIFIX%3DX?token=${sWQ9WUsu9XVMkeXC8SZGVB}`);
-        const data = await res.json();
-        const find = (s) => data.results.find(r => r.symbol.includes(s)) || { regularMarketPrice: 0, regularMarketChangePercent: 0 };
-
-        const indices = [
-          { n: 'SELIC', v: '10,75%', c: 0 },
-          { n: 'IPCA', v: '4,51%', c: 0 },
-          { n: 'IBOV', v: find('BVSP').regularMarketPrice.toLocaleString(), c: find('BVSP').regularMarketChangePercent },
-          { n: 'DÓLAR', v: `R$ ${find('USD').regularMarketPrice.toFixed(2)}`, c: find('USD').regularMarketChangePercent },
-          { n: 'EURO', v: `R$ ${find('EUR').regularMarketPrice.toFixed(2)}`, c: find('EUR').regularMarketChangePercent },
-          { n: 'IFIX', v: find('IFIX').regularMarketPrice.toFixed(0), c: find('IFIX').regularMarketChangePercent }
-        ];
-
-        const html = indices.map(i => `
-                    <div class="flex items-center gap-2 px-8 border-r border-slate-900">
-                        <span class="text-[10px] text-slate-500 font-bold">${i.n}</span>
-                        <span class="text-sm font-black">${i.v}</span>
-                        ${i.c !== 0 ? `<span class="text-[10px] font-bold ${i.c >= 0 ? 'text-green-500' : 'text-red-500'}">${i.c >= 0 ? '+' : ''}${i.c.toFixed(2)}%</span>` : ''}
-                    </div>
-                `).join('');
-        document.getElementById('ticker-data').innerHTML = html + html;
-      } catch (e) { }
+    /* ===== NAVEGAÇÃO ===== */
+    function show(id, el) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      el.classList.add('active');
+      atualizarResumo();
     }
 
-    async function fetchMarketData() {
-      try {
-        const res = await fetch(`https://brapi.dev/api/quote/list?token=${API_TOKEN}`);
-        const data = await res.json();
-        const sorted = data.stocks.filter(s => s.change !== null && s.volume > 100000).sort((a, b) => b.change - a.change);
-        render('highs-list', sorted.slice(0, 10), '#22c55e');
-        render('lows-list', [...sorted].reverse().slice(0, 10), '#ef4444');
-      } catch (e) { }
-    }
+    /* ===== RADAR ===== */
+    let precosRadar = {};
+    let todasAcoes = [], pagina = 1, porPagina = 15;
 
-    function render(id, list, color) {
-      const container = document.getElementById(id);
-      container.innerHTML = list.map((s, i) => `
-                <div class="card p-4 flex justify-between items-center">
-                    <div class="w-16 font-black text-sm">${s.stock}</div>
-                    <div class="flex-1 h-8 mx-4"><canvas id="c-${id}-${i}"></canvas></div>
-                    <div class="text-right">
-                        <p class="font-bold text-xs text-slate-300">R$ ${s.close.toFixed(2)}</p>
-                        <p class="text-[10px] font-black ${s.change >= 0 ? 'text-green-400' : 'text-red-400'}">${s.change.toFixed(2)}%</p>
-                    </div>
-                </div>
-            `).join('');
-      list.forEach((s, i) => {
-        new Chart(document.getElementById(`c-${id}-${i}`).getContext('2d'), {
-          type: 'line',
-          data: { labels: [1, 2, 3, 4, 5, 6], datasets: [{ data: s.change > 0 ? [10, 12, 11, 20, 18, 25] : [25, 18, 20, 11, 12, 10], borderColor: color, borderWidth: 1.5, pointRadius: 0, fill: false, tension: 0.4 }] },
-          options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }
-        });
+    function renderAcoes() {
+      const termo = busca.value.toLowerCase();
+      const f = todasAcoes.filter(a => a.stock.toLowerCase().includes(termo) || a.name.toLowerCase().includes(termo));
+      const s = f.slice((pagina - 1) * porPagina, pagina * porPagina);
+      acoes.innerHTML = "";
+      s.forEach(a => acoes.innerHTML += `<tr><td>${a.stock}</td><td>${a.name}</td><td>R$ ${a.close}</td></tr>`);
+    }
+    busca.oninput = () => { pagina = 1; renderAcoes() };
+    function nextPage() { pagina++; renderAcoes() }
+    function prevPage() { if (pagina > 1) pagina--; renderAcoes() }
+
+    fetch("https://brapi.dev/api/quote/list")
+      .then(r => r.json())
+      .then(d => {
+        todasAcoes = d.stocks || [];
+        todasAcoes.forEach(a => precosRadar[a.stock] = a.close);
+        renderAcoes();
+        renderCarteira();
       });
+
+    /* ===== INDICADORES ===== */
+    const series = { dolar: 1, selic: 11, ipca: 433, cdi: 12 };
+    for (const [id, v] of Object.entries(series)) {
+      fetch(`https://api.bcb.gov.br/dados/serie/bcdata.sgs.${v}/dados/ultimos/1?formato=json`)
+        .then(r => r.json())
+        .then(d => document.getElementById(id).textContent = id === "dolar" ? "R$ " + (+d[0].valor).toFixed(2) : d[0].valor + "%");
     }
 
-    async function searchStock() {
-      const t = document.getElementById('search-ticker').value.toUpperCase();
-      if (!t) return;
-      try {
-        const res = await fetch(`https://brapi.dev/api/quote/${t}?token=${API_TOKEN}`);
-        const d = await res.json();
-        const s = d.results[0];
-        document.getElementById('search-result').innerHTML = `
-                    <div class="card p-5 border-blue-500 shadow-xl">
-                        <div class="flex justify-between items-center">
-                            <div><p class="text-xl font-black">${s.symbol}</p><p class="text-[10px] text-slate-500 uppercase">${s.longName}</p></div>
-                            <div class="text-right">
-                                <p class="text-2xl font-black">R$ ${s.regularMarketPrice.toFixed(2)}</p>
-                                <p class="font-bold ${s.regularMarketChangePercent >= 0 ? 'text-green-500' : 'text-red-400'}">${s.regularMarketChangePercent.toFixed(2)}%</p>
-                            </div>
-                        </div>
-                    </div>`;
-      } catch (e) { document.getElementById('search-result').innerHTML = "<p class='text-red-500'>Erro.</p>"; }
+    /* ===== GASTOS ===== */
+    let dados = JSON.parse(localStorage.getItem("financas")) || [];
+    function salvarFinancas() { localStorage.setItem("financas", JSON.stringify(dados)) }
+    function addMov() {
+      if (!desc.value || valor.value <= 0) return alert("Preencha corretamente");
+      dados.push({ d: desc.value, v: +valor.value, t: tipo.value });
+      desc.value = valor.value = "";
+      salvarFinancas(); renderFin();
     }
+    function renderFin() {
+      let g = 0, ga = 0; lista.innerHTML = "";
+      dados.forEach(m => { m.t === "ganho" ? g += m.v : ga += m.v; lista.innerHTML += `<tr><td>${m.d}</td><td>${m.t}</td><td>R$ ${m.v.toFixed(2)}</td></tr>` });
+      totalGanhos.textContent = "R$ " + g.toFixed(2);
+      totalGastos.textContent = "R$ " + ga.toFixed(2);
+      saldo.textContent = "R$ " + (g - ga).toFixed(2);
+      atualizarResumo();
+    }
+    renderFin();
 
-    updateTicker();
-    fetchMarketData();
-    setInterval(updateTicker, 60000);
-    setInterval(fetchMarketData, 60000);
+    /* ===== CARTEIRA ===== */
+    let carteira = JSON.parse(localStorage.getItem("carteira")) || [];
+    function salvarCarteira() { localStorage.setItem("carteira", JSON.stringify(carteira)) }
+    function addAtivo() {
+      if (!cticker.value || cqt.value <= 0 || cpreco.value <= 0) return alert("Preencha corretamente");
+      carteira.push({ t: cticker.value.toUpperCase(), q: +cqt.value, p: +cpreco.value });
+      cticker.value = cqt.value = cpreco.value = "";
+      salvarCarteira(); renderCarteira();
+    }
+    function editarQuantidade(i) {
+      const q = prompt("Nova quantidade:", carteira[i].q);
+      if (q <= 0) return;
+      carteira[i].q = +q; salvarCarteira(); renderCarteira();
+    }
+    function removerAtivo(i) {
+      if (!confirm("Remover ativo?")) return;
+      carteira.splice(i, 1); salvarCarteira(); renderCarteira();
+    }
+    function renderCarteira() {
+      listaCarteira.innerHTML = "";
+      let invest = 0, res = 0;
+      carteira.forEach((a, i) => {
+        invest += a.q * a.p;
+        const atual = precosRadar[a.t];
+        const total = atual ? atual * a.q : 0;
+        const r = atual ? total - (a.q * a.p) : 0;
+        res += r;
+        listaCarteira.innerHTML += `
+   <tr>
+    <td>${a.t}</td><td>${a.q}</td><td>R$ ${a.p.toFixed(2)}</td>
+    <td>${atual ? "R$ " + total.toFixed(2) : "--"}</td>
+    <td class="${r >= 0 ? 'positivo' : 'negativo'}">${atual ? "R$ " + r.toFixed(2) : "--"}</td>
+    <td><button onclick="editarQuantidade(${i})">✏️</button> <button onclick="removerAtivo(${i})">🗑</button></td>
+   </tr>`;
+      });
+      rInvestido.textContent = "R$ " + invest.toFixed(2);
+      rResultado.textContent = "R$ " + res.toFixed(2);
+    }
+    renderCarteira();
+
+    /* ===== RESUMO ===== */
+    function atualizarResumo() {
+      let g = 0, ga = 0;
+      dados.forEach(m => m.t === "ganho" ? g += m.v : ga += m.v);
+      rGanhos.textContent = "R$ " + g.toFixed(2);
+      rGastos.textContent = "R$ " + ga.toFixed(2);
+      rSaldo.textContent = "R$ " + (g - ga).toFixed(2);
+    }
   </script>
+
 </body>
 
 </html>
