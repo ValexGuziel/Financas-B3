@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <title>Finance App</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
     :root {
@@ -20,52 +21,97 @@
 
     * {
       box-sizing: border-box;
-      font-family: Segoe UI, Roboto, Arial
+      font-family: Segoe UI, Roboto, Arial;
     }
 
     body {
       margin: 0;
       background: var(--bg);
       color: var(--text);
-      padding-bottom: 70px
+      padding-bottom: 70px;
     }
 
     header {
       background: var(--card);
       border-bottom: 1px solid var(--border);
-      padding: 14px 20px
+      padding: 14px 20px;
     }
 
     .container {
       max-width: 1200px;
       margin: auto;
-      padding: 20px
+      padding: 20px;
+    }
+
+    .radar-layout {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .radar-layout {
+        grid-template-columns: 1fr;
+      }
     }
 
     .grid {
       display: grid;
-      gap: 16px
+      gap: 16px;
     }
 
     .grid-4 {
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr))
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     }
 
     .card {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 18px
+      padding: 18px;
     }
 
     .card small {
-      color: var(--muted)
+      color: var(--muted);
     }
 
     .card strong {
       display: block;
       font-size: 20px;
-      margin-top: 6px
+      margin-top: 6px;
+    }
+
+    .news-item {
+      border-left: 3px solid var(--primary);
+      padding-left: 12px;
+      margin-bottom: 15px;
+      font-size: 13px;
+    }
+
+    .news-item strong {
+      display: block;
+      color: var(--text);
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .news-item p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+
+    th,
+    td {
+      padding: 12px 8px;
+      border-bottom: 1px solid var(--border);
     }
 
     input,
@@ -76,26 +122,57 @@
       border: 1px solid var(--border);
       background: #020617;
       color: var(--text);
-      margin-bottom: 10px
+      margin-bottom: 10px;
     }
 
-    table {
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 12px;
+      background: var(--border);
+      color: var(--text);
+      transition: 0.2s;
+    }
+
+    button:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #000;
+      font-weight: bold;
       width: 100%;
-      border-collapse: collapse;
-      font-size: 14px
     }
 
-    th,
-    td {
-      padding: 10px;
-      border-bottom: 1px solid var(--border)
+    .btn-danger {
+      color: var(--danger);
+      background: transparent;
+      font-size: 16px;
+      padding: 0;
+    }
+
+    .btn-add-fast {
+      background: var(--success);
+      color: #000;
+      font-weight: bold;
+      padding: 4px 8px;
+      font-size: 12px;
     }
 
     .pagination {
       display: flex;
-      gap: 8px;
-      justify-content: flex-end;
-      margin-top: 10px
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      margin-top: 15px;
+    }
+
+    .page-info {
+      font-size: 14px;
+      color: var(--muted);
     }
 
     .nav-bottom {
@@ -107,40 +184,56 @@
       border-top: 1px solid var(--border);
       display: flex;
       justify-content: space-around;
-      padding: 8px 0
+      padding: 8px 0;
     }
 
     .nav-item {
       text-align: center;
       font-size: 12px;
       color: var(--muted);
-      cursor: pointer
+      cursor: pointer;
     }
 
     .nav-item.active {
       color: var(--primary);
-      font-weight: 600
+      font-weight: 600;
     }
 
     .nav-item span {
       display: block;
-      font-size: 18px
+      font-size: 18px;
     }
 
     .page {
-      display: none
+      display: none;
     }
 
     .page.active {
-      display: block
+      display: block;
     }
 
     .positivo {
-      color: var(--success)
+      color: var(--success);
     }
 
     .negativo {
-      color: var(--danger)
+      color: var(--danger);
+    }
+
+    .buy-popup {
+      background: var(--bg);
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--primary);
+      margin-top: 5px;
+    }
+
+    /* Estilo para o Gráfico */
+    .chart-container {
+      position: relative;
+      height: 300px;
+      width: 100%;
+      margin-top: 20px;
     }
   </style>
 </head>
@@ -152,57 +245,64 @@
   <div class="container">
 
     <section id="radar" class="page active">
-      <h2>Radar</h2>
+      <div class="radar-layout">
+        <div class="radar-main">
+          <h2>Radar de Mercado</h2>
+          <div class="grid grid-4">
+            <div class="card"><small>Dólar</small><strong id="dolar">--</strong></div>
+            <div class="card"><small>SELIC</small><strong id="selic">--</strong></div>
+            <div class="card"><small>IPCA</small><strong id="ipca">--</strong></div>
+            <div class="card"><small>CDI</small><strong id="cdi">--</strong></div>
+          </div>
 
-      <div class="grid grid-4">
-        <div class="card"><small>Dólar</small><strong id="dolar">--</strong></div>
-        <div class="card"><small>SELIC</small><strong id="selic">--</strong></div>
-        <div class="card"><small>IPCA</small><strong id="ipca">--</strong></div>
-        <div class="card"><small>CDI</small><strong id="cdi">--</strong></div>
-      </div>
+          <h3 style="margin-top:24px">Ações B3</h3>
+          <input type="text" id="inputBuscaRadar" placeholder="🔍 Buscar ticker ou empresa..." onkeyup="filtrarRadar()">
 
-      <h3 style="margin-top:24px">Ações da B3</h3>
-      <input id="busca" placeholder="Buscar por ticker ou empresa...">
-
-      <div class="card">
-        <table>
-          <thead>
-            <tr>
-              <th>Ticker</th>
-              <th>Empresa</th>
-              <th>Preço</th>
-            </tr>
-          </thead>
-          <tbody id="acoes"></tbody>
-        </table>
-
-        <div class="pagination">
-          <button onclick="prevPage()">Anterior</button>
-          <button onclick="nextPage()">Próxima</button>
+          <div class="card">
+            <table>
+              <thead>
+                <tr>
+                  <th>Ação</th>
+                  <th>Preço</th>
+                  <th style="text-align: right;">Ação</th>
+                </tr>
+              </thead>
+              <tbody id="acoes"></tbody>
+            </table>
+            <div class="pagination">
+              <button onclick="changePage(-1)" id="btnPrev">« Anterior</button>
+              <span class="page-info" id="pageInfo">Página 1</span>
+              <button onclick="changePage(1)" id="btnNext">Próxima »</button>
+            </div>
+          </div>
+        </div>
+        <div class="radar-news">
+          <h3>💡 Insights do Dia</h3>
+          <div class="card" id="comentarios-container"></div>
         </div>
       </div>
     </section>
 
     <section id="carteira" class="page">
-      <h2>Carteira</h2>
-
+      <h2>Minha Carteira</h2>
       <div class="card">
-        <input id="cticker" placeholder="Ticker">
-        <input id="cqt" type="number" placeholder="Quantidade">
-        <input id="cpreco" type="number" placeholder="Preço médio">
-        <button onclick="addAtivo()">Adicionar</button>
+        <div class="grid grid-4">
+          <input id="cticker" placeholder="Ação">
+          <input id="cqt" type="number" placeholder="Qtd">
+          <input id="cpreco" type="number" placeholder="Preço Médio">
+          <button class="btn-primary" onclick="addAtivo()">Salvar</button>
+        </div>
       </div>
-
       <div class="card" style="margin-top:16px">
         <table>
           <thead>
             <tr>
-              <th>Ticker</th>
+              <th>Ação</th>
               <th>Qtd</th>
-              <th>Preço</th>
-              <th>Valor Atual</th>
+              <th>Média</th>
+              <th>Atual</th>
               <th>Resultado</th>
-              <th></th>
+              <th>Ações</th>
             </tr>
           </thead>
           <tbody id="listaCarteira"></tbody>
@@ -211,46 +311,47 @@
     </section>
 
     <section id="gastos" class="page">
-      <h2>Ganhos & Gastos</h2>
-
+      <h2>Financeiro</h2>
       <div class="card">
         <input id="desc" placeholder="Descrição">
-        <input id="valor" type="number" placeholder="Valor">
+        <input id="valor" type="number" placeholder="Valor R$">
         <select id="tipo">
-          <option value="ganho">Ganho</option>
-          <option value="gasto">Gasto</option>
+          <option value="ganho">Entrada</option>
+          <option value="gasto">Saída</option>
         </select>
-        <button onclick="addMov()">Adicionar</button>
+        <button class="btn-primary" onclick="addMov()">Adicionar</button>
       </div>
-
       <div class="grid grid-4" style="margin-top:16px">
-        <div class="card"><small>Ganhos</small><strong id="totalGanhos">R$ 0</strong></div>
-        <div class="card"><small>Gastos</small><strong id="totalGastos">R$ 0</strong></div>
-        <div class="card"><small>Saldo</small><strong id="saldo">R$ 0</strong></div>
+        <div class="card"><small>Saldo em Conta</small><strong id="saldoTotal">R$ 0</strong></div>
       </div>
-
       <div class="card" style="margin-top:16px">
         <table>
           <thead>
             <tr>
               <th>Descrição</th>
-              <th>Tipo</th>
               <th>Valor</th>
+              <th>Ações</th>
             </tr>
           </thead>
-          <tbody id="lista"></tbody>
+          <tbody id="listaFin"></tbody>
         </table>
       </div>
     </section>
 
     <section id="resumo" class="page">
-      <h2>Resumo</h2>
+      <h2>Resumo Consolidado</h2>
       <div class="grid grid-4">
-        <div class="card"><small>Ganhos</small><strong id="rGanhos">R$ 0</strong></div>
-        <div class="card"><small>Gastos</small><strong id="rGastos">R$ 0</strong></div>
-        <div class="card"><small>Saldo</small><strong id="rSaldo">R$ 0</strong></div>
-        <div class="card"><small>Investido</small><strong id="rInvestido">R$ 0</strong></div>
-        <div class="card"><small>Resultado Carteira</small><strong id="rResultado">R$ 0</strong></div>
+        <div class="card"><small>Patrimônio em Ações</small><strong id="resPatrimonio">R$ 0</strong></div>
+        <div class="card"><small>Saldo em Conta</small><strong id="resSaldo">R$ 0</strong></div>
+        <div class="card"><small>Lucro/Prejuízo Ações</small><strong id="resResultado">R$ 0</strong></div>
+        <div class="card"><small>Total Geral</small><strong id="resTotalGeral">R$ 0</strong></div>
+      </div>
+
+      <div class="card" style="margin-top:20px; text-align: center;">
+        <small>Distribuição de Patrimônio</small>
+        <div class="chart-container">
+          <canvas id="resumoChart"></canvas>
+        </div>
       </div>
     </section>
 
@@ -259,121 +360,200 @@
   <nav class="nav-bottom">
     <div class="nav-item active" onclick="show('radar',this)"><span>📡</span>Radar</div>
     <div class="nav-item" onclick="show('carteira',this)"><span>💼</span>Carteira</div>
-    <div class="nav-item" onclick="show('gastos',this)"><span>💸</span>Gastos</div>
+    <div class="nav-item" onclick="show('gastos',this)"><span>💸</span>Financeiro</div>
     <div class="nav-item" onclick="show('resumo',this)"><span>📊</span>Resumo</div>
   </nav>
 
   <script>
-    /* ===== NAVEGAÇÃO ===== */
+    let allStocks = [];
+    let filteredStocks = [];
+    let currentPage = 1;
+    const itemsPerPage = 10;
+    let precosAcoes = {};
+    let chartInstance = null;
+
+    let carteira = JSON.parse(localStorage.getItem("carteira_data")) || [];
+    let finData = JSON.parse(localStorage.getItem("fin_data")) || [];
+
     function show(id, el) {
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.getElementById(id).classList.add('active');
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
       el.classList.add('active');
-      atualizarResumo();
+      if (id === 'resumo') renderResumo();
     }
 
-    /* ===== RADAR ===== */
-    let precosRadar = {};
-    let todasAcoes = [], pagina = 1, porPagina = 15;
+    /* --- RESUMO E GRÁFICOS --- */
+    function renderResumo() {
+      // Cálculos Financeiros
+      let saldoConta = finData.reduce((acc, m) => acc + (m.t === 'ganho' ? m.v : -m.v), 0);
 
-    function renderAcoes() {
-      const termo = busca.value.toLowerCase();
-      const f = todasAcoes.filter(a => a.stock.toLowerCase().includes(termo) || a.name.toLowerCase().includes(termo));
-      const s = f.slice((pagina - 1) * porPagina, pagina * porPagina);
-      acoes.innerHTML = "";
-      s.forEach(a => acoes.innerHTML += `<tr><td>${a.stock}</td><td>${a.name}</td><td>R$ ${a.close}</td></tr>`);
-    }
-    busca.oninput = () => { pagina = 1; renderAcoes() };
-    function nextPage() { pagina++; renderAcoes() }
-    function prevPage() { if (pagina > 1) pagina--; renderAcoes() }
-
-    fetch("https://brapi.dev/api/quote/list")
-      .then(r => r.json())
-      .then(d => {
-        todasAcoes = d.stocks || [];
-        todasAcoes.forEach(a => precosRadar[a.stock] = a.close);
-        renderAcoes();
-        renderCarteira();
+      // Cálculos Carteira
+      let valorInvestido = 0;
+      let valorAtual = 0;
+      carteira.forEach(a => {
+        const atual = precosAcoes[a.t] || 0;
+        valorInvestido += (a.p * a.q);
+        valorAtual += (atual * a.q);
       });
 
-    /* ===== INDICADORES ===== */
-    const series = { dolar: 1, selic: 11, ipca: 433, cdi: 12 };
-    for (const [id, v] of Object.entries(series)) {
-      fetch(`https://api.bcb.gov.br/dados/serie/bcdata.sgs.${v}/dados/ultimos/1?formato=json`)
-        .then(r => r.json())
-        .then(d => document.getElementById(id).textContent = id === "dolar" ? "R$ " + (+d[0].valor).toFixed(2) : d[0].valor + "%");
+      let lucroAcoes = valorAtual - valorInvestido;
+      let totalGeral = saldoConta + valorAtual;
+
+      // Atualizar DOM
+      document.getElementById('resPatrimonio').textContent = `R$ ${valorAtual.toFixed(2)}`;
+      document.getElementById('resSaldo').textContent = `R$ ${saldoConta.toFixed(2)}`;
+      document.getElementById('resResultado').textContent = `R$ ${lucroAcoes.toFixed(2)}`;
+      document.getElementById('resResultado').className = lucroAcoes >= 0 ? 'positivo' : 'negativo';
+      document.getElementById('resTotalGeral').textContent = `R$ ${totalGeral.toFixed(2)}`;
+
+      // Atualizar Gráfico
+      const ctx = document.getElementById('resumoChart').getContext('2d');
+      if (chartInstance) chartInstance.destroy();
+
+      chartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Saldo em Conta', 'Ações'],
+          datasets: [{
+            data: [saldoConta, valorAtual],
+            backgroundColor: ['#38bdf8', '#22c55e'],
+            borderColor: '#020617',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: '#e5e7eb' } }
+          }
+        }
+      });
     }
 
-    /* ===== GASTOS ===== */
-    let dados = JSON.parse(localStorage.getItem("financas")) || [];
-    function salvarFinancas() { localStorage.setItem("financas", JSON.stringify(dados)) }
-    function addMov() {
-      if (!desc.value || valor.value <= 0) return alert("Preencha corretamente");
-      dados.push({ d: desc.value, v: +valor.value, t: tipo.value });
-      desc.value = valor.value = "";
-      salvarFinancas(); renderFin();
+    /* --- LÓGICA RADAR --- */
+    function filtrarRadar() {
+      const termo = document.getElementById('inputBuscaRadar').value.toUpperCase();
+      filteredStocks = allStocks.filter(s => s.stock.includes(termo) || s.name.toUpperCase().includes(termo));
+      currentPage = 1;
+      renderRadar();
     }
-    function renderFin() {
-      let g = 0, ga = 0; lista.innerHTML = "";
-      dados.forEach(m => { m.t === "ganho" ? g += m.v : ga += m.v; lista.innerHTML += `<tr><td>${m.d}</td><td>${m.t}</td><td>R$ ${m.v.toFixed(2)}</td></tr>` });
-      totalGanhos.textContent = "R$ " + g.toFixed(2);
-      totalGastos.textContent = "R$ " + ga.toFixed(2);
-      saldo.textContent = "R$ " + (g - ga).toFixed(2);
-      atualizarResumo();
-    }
-    renderFin();
 
-    /* ===== CARTEIRA ===== */
-    let carteira = JSON.parse(localStorage.getItem("carteira")) || [];
-    function salvarCarteira() { localStorage.setItem("carteira", JSON.stringify(carteira)) }
-    function addAtivo() {
-      if (!cticker.value || cqt.value <= 0 || cpreco.value <= 0) return alert("Preencha corretamente");
-      carteira.push({ t: cticker.value.toUpperCase(), q: +cqt.value, p: +cpreco.value });
-      cticker.value = cqt.value = cpreco.value = "";
-      salvarCarteira(); renderCarteira();
+    function changePage(step) {
+      const totalPages = Math.ceil(filteredStocks.length / itemsPerPage);
+      if (currentPage + step >= 1 && currentPage + step <= totalPages) {
+        currentPage += step;
+        renderRadar();
+      }
     }
-    function editarQuantidade(i) {
-      const q = prompt("Nova quantidade:", carteira[i].q);
-      if (q <= 0) return;
-      carteira[i].q = +q; salvarCarteira(); renderCarteira();
+
+    function renderRadar() {
+      const corpo = document.getElementById('acoes');
+      corpo.innerHTML = "";
+      const pageItems = filteredStocks.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+      pageItems.forEach(a => {
+        corpo.innerHTML += `
+          <tr>
+            <td><strong>${a.stock}</strong><br><small style="color:var(--muted)">${a.name}</small></td>
+            <td>R$ ${a.close.toFixed(2)}</td>
+            <td style="text-align: right;"><button class="btn-add-fast" onclick="toggleQuickAdd('${a.stock}')">＋</button></td>
+          </tr>
+          <tr id="form-${a.stock}" style="display:none">
+            <td colspan="3"><div class="buy-popup"><div class="grid" style="grid-template-columns: 1fr 1fr auto; gap: 8px;">
+              <input type="number" id="q-${a.stock}" placeholder="Qtd">
+              <input type="number" id="p-${a.stock}" value="${a.close}" step="0.01">
+              <button class="btn-primary" style="width:auto" onclick="quickAdd('${a.stock}')">Add</button>
+            </div></div></td>
+          </tr>`;
+      });
+
+      const totalPages = Math.ceil(filteredStocks.length / itemsPerPage) || 1;
+      document.getElementById('pageInfo').textContent = `Pág ${currentPage} / ${totalPages}`;
+      document.getElementById('btnPrev').disabled = currentPage === 1;
+      document.getElementById('btnNext').disabled = currentPage === totalPages;
     }
-    function removerAtivo(i) {
-      if (!confirm("Remover ativo?")) return;
-      carteira.splice(i, 1); salvarCarteira(); renderCarteira();
+
+    function toggleQuickAdd(t) {
+      const r = document.getElementById(`form-${t}`);
+      r.style.display = r.style.display === 'none' ? 'table-row' : 'none';
     }
+
+    function quickAdd(t) {
+      const q = document.getElementById(`q-${t}`).value;
+      const p = document.getElementById(`p-${t}`).value;
+      if (q > 0) {
+        carteira.push({ t, q: +q, p: +p });
+        saveCarteira();
+        alert(t + " adicionado!");
+        toggleQuickAdd(t);
+      }
+    }
+
+    /* --- CARTEIRA E FINANÇAS --- */
+    function saveCarteira() { localStorage.setItem("carteira_data", JSON.stringify(carteira)); renderCarteira(); }
     function renderCarteira() {
-      listaCarteira.innerHTML = "";
-      let invest = 0, res = 0;
+      const lista = document.getElementById('listaCarteira');
+      lista.innerHTML = "";
       carteira.forEach((a, i) => {
-        invest += a.q * a.p;
-        const atual = precosRadar[a.t];
-        const total = atual ? atual * a.q : 0;
-        const r = atual ? total - (a.q * a.p) : 0;
-        res += r;
-        listaCarteira.innerHTML += `
-   <tr>
-    <td>${a.t}</td><td>${a.q}</td><td>R$ ${a.p.toFixed(2)}</td>
-    <td>${atual ? "R$ " + total.toFixed(2) : "--"}</td>
-    <td class="${r >= 0 ? 'positivo' : 'negativo'}">${atual ? "R$ " + r.toFixed(2) : "--"}</td>
-    <td><button onclick="editarQuantidade(${i})">✏️</button> <button onclick="removerAtivo(${i})">🗑</button></td>
-   </tr>`;
+        const atual = precosAcoes[a.t] || 0;
+        const res = atual ? (atual * a.q) - (a.p * a.q) : 0;
+        lista.innerHTML += `<tr><td><strong>${a.t}</strong></td><td>${a.q}</td><td>R$ ${a.p.toFixed(2)}</td><td>R$ ${atual.toFixed(2)}</td><td class="${res >= 0 ? 'positivo' : 'negativo'}">R$ ${res.toFixed(2)}</td><td><button class="btn-danger" onclick="carteira.splice(${i},1);saveCarteira()">🗑</button></td></tr>`;
       });
-      rInvestido.textContent = "R$ " + invest.toFixed(2);
-      rResultado.textContent = "R$ " + res.toFixed(2);
     }
-    renderCarteira();
 
-    /* ===== RESUMO ===== */
-    function atualizarResumo() {
-      let g = 0, ga = 0;
-      dados.forEach(m => m.t === "ganho" ? g += m.v : ga += m.v);
-      rGanhos.textContent = "R$ " + g.toFixed(2);
-      rGastos.textContent = "R$ " + ga.toFixed(2);
-      rSaldo.textContent = "R$ " + (g - ga).toFixed(2);
+    function addMov() {
+      finData.push({ d: desc.value, v: +valor.value, t: tipo.value });
+      localStorage.setItem("fin_data", JSON.stringify(finData));
+      renderFin();
+      desc.value = ""; valor.value = "";
     }
+
+    function renderFin() {
+      let total = 0;
+      document.getElementById('listaFin').innerHTML = finData.map((m, i) => {
+        total += m.t === 'ganho' ? m.v : -m.v;
+        return `<tr><td>${m.d}</td><td class="${m.t === 'ganho' ? 'positivo' : 'negativo'}">R$ ${m.v.toFixed(2)}</td><td><button class="btn-danger" onclick="finData.splice(${i},1);renderFin()">🗑</button></td></tr>`;
+      }).join('');
+      document.getElementById('saldoTotal').textContent = "R$ " + total.toFixed(2);
+    }
+
+    /* --- APIS --- */
+    async function fetchData() {
+      const rA = await fetch("https://brapi.dev/api/quote/list");
+      const dA = await rA.json();
+      allStocks = dA.stocks || [];
+      filteredStocks = allStocks;
+      allStocks.forEach(s => precosAcoes[s.stock] = s.close);
+      renderRadar();
+      renderCarteira();
+
+      const indices = { dolar: 1, selic: 11, ipca: 433, cdi: 12 };
+      let dadosBCB = {};
+      for (let [k, v] of Object.entries(indices)) {
+        const r = await fetch(`https://api.bcb.gov.br/dados/serie/bcdata.sgs.${v}/dados/ultimos/1?formato=json`);
+        const d = await r.json();
+        const val = k === 'dolar' ? "R$ " + (+d[0].valor).toFixed(2) : d[0].valor + "%";
+        document.getElementById(k).textContent = val;
+        dadosBCB[k] = val;
+      }
+      atualizarInsights(dadosBCB);
+    }
+
+    function atualizarInsights(dados) {
+      const container = document.getElementById('comentarios-container');
+      container.innerHTML = `
+        <div class="news-item"><strong>Câmbio</strong><p>Dólar em ${dados.dolar}. Impacto direto em empresas exportadoras.</p></div>
+        <div class="news-item"><strong>Juros</strong><p>Selic em ${dados.selic}. Renda fixa mantendo prêmio real elevado.</p></div>
+        <div class="news-item"><strong>Inflação</strong><p>IPCA em ${dados.ipca}. Foco em ativos que protegem o poder de compra.</p></div>
+        <div class="news-item"><strong>Dica</strong><p>Use a aba Resumo para ver como sua carteira está distribuída hoje.</p></div>
+      `;
+    }
+
+    fetchData();
+    renderFin();
   </script>
-
 </body>
 
 </html>
